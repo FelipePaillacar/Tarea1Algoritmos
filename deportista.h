@@ -22,4 +22,9 @@ void guardar_deportistas_csv(Deportista *arreglo, int cantidad, const char *nomb
 int leer_deportistas_csv(Deportista *arreglo, int cantidad_maxima, const char *nombre_archivo);
 void imprimir_deportista(Deportista d);
 
+// Nuevas funciones para generar casos específicos
+Deportista generar_deportista_con_id_especifico(int id); // Función auxiliar
+void generar_datos_ordenados(Deportista *arreglo, int cantidad);
+void generar_datos_inversos(Deportista *arreglo, int cantidad);
+
 #endif // DEPORTISTA_H

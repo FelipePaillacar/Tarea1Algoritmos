@@ -75,6 +75,41 @@ Deportista generar_deportista() {
     return nuevo_deportista;
 }
 
+// Función para generar un deportista con un ID específico
+Deportista generar_deportista_con_id_especifico(int id) {
+    Deportista nuevo_deportista;
+    
+    nuevo_deportista.id = id;
+    generar_nombre_aleatorio(nuevo_deportista.nombre, MAX_LONGITUD_NOMBRE);
+    
+    // Asignar un equipo de forma aleatoria
+    int indice_equipo = rand() % NUM_EQUIPOS;
+    strncpy(nuevo_deportista.equipo, equipos_brasil[indice_equipo], MAX_LONGITUD_EQUIPO);
+    nuevo_deportista.equipo[MAX_LONGITUD_EQUIPO - 1] = '\0'; // Asegurar que el string termine correctamente
+
+    // Generar puntaje aleatorio (ejemplo: entre 50.0 y 100.0 con 1 decimal)
+    nuevo_deportista.puntaje = 50.0 + ((float)(rand() % 501) / 10.0);
+    
+    // Generar cantidad de competencias jugadas (ejemplo: entre 1 y 40)
+    nuevo_deportista.competencias = (rand() % 40) + 1;
+
+    return nuevo_deportista;
+}
+
+// Genera un arreglo de deportistas ordenado por ID (mejor caso para muchos sorts)
+void generar_datos_ordenados(Deportista *arreglo, int cantidad) {
+    for (int i = 0; i < cantidad; i++) {
+        arreglo[i] = generar_deportista_con_id_especifico(i + 1); // IDs de 1 a cantidad
+    }
+}
+
+// Genera un arreglo de deportistas inversamente ordenado por ID (peor caso para muchos sorts)
+void generar_datos_inversos(Deportista *arreglo, int cantidad) {
+    for (int i = 0; i < cantidad; i++) {
+        arreglo[i] = generar_deportista_con_id_especifico(cantidad - i); // IDs de cantidad a 1
+    }
+}
+
 // Algoritmo de Fisher-Yates para mezclar aleatoriamente el arreglo
 void mezclar_deportistas(Deportista *arreglo, int cantidad) {
     for (int i = cantidad - 1; i > 0; i--) {
@@ -125,7 +160,6 @@ int leer_deportistas_csv(Deportista *arreglo, int cantidad_maxima, const char *n
     
     // Leer línea por línea hasta terminar el archivo o llegar al límite
     while (fgets(linea, sizeof(linea), archivo) != NULL && contador < cantidad_maxima) {
-        // %[^,] significa "lee todo hasta encontrar una coma"
         sscanf(linea, "%d,%[^,],%[^,],%f,%d", &arreglo[contador].id, arreglo[contador].nombre, arreglo[contador].equipo, &arreglo[contador].puntaje, &arreglo[contador].competencias);
         contador++;
     }

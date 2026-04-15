@@ -3,156 +3,13 @@
 #include <time.h>
 #include <string.h>
 #include "deportista.h"
+#include "menu.h"
+#include "ordenamiento.h"
+#include "busqueda.h"
 
-#define MAX_DEPORTISTAS 10000
-#define CANTIDAD_GENERAR 10000// Cantidad de datos a generar para las pruebas
+#define MAX_DEPORTISTAS 10000 
+#define CANTIDAD_GENERAR 10000
 #define ARCHIVO_DATOS "datos.csv"
-
-void mostrar_menu() {
-    printf("\n========== MENU PRINCIPAL ==========\n");
-    printf("1. Generar, mezclar y guardar datos\n");
-    printf("2. Cargar datos desde archivo\n");
-    printf("3. Mostrar todos los registros\n");
-    printf("4. Ordenar registros (Submenu)\n");
-    printf("5. Buscar deportista por ID\n");
-    printf("6. Mostrar ranking (Mejores N deportistas)\n");
-    printf("7. Salir\n");
-    printf("====================================\n");
-    printf("Seleccione una opcion: ");
-}
-
-void menu_ordenamiento() {
-    printf("\n--- ORDENAR POR ---\n");
-    printf("1. ID\n");
-    printf("2. Nombre\n");
-    printf("3. Equipo\n");
-    printf("4. Puntaje\n");
-    printf("5. Competencias\n");
-    printf("Seleccione campo a ordenar: ");
-}
-
-// Implementación de Bubble Sort optimizado para generar el ranking (Puntaje Descendente)
-void ordenar_ranking_descendente(Deportista *arreglo, int cantidad) {
-    for (int i = 0; i < cantidad - 1; i++) {
-        int intercambiado = 0; // Optimización para detectar si ya está ordenado
-        for (int j = 0; j < cantidad - i - 1; j++) {
-            if (arreglo[j].puntaje < arreglo[j + 1].puntaje) {
-                Deportista temp = arreglo[j];
-                arreglo[j] = arreglo[j + 1];
-                arreglo[j + 1] = temp;
-                intercambiado = 1;
-            }
-        }
-        if (!intercambiado) break; // Si no hubo cambios, terminamos temprano
-    }
-}
-
-// Función auxiliar para comparar deportistas según el campo seleccionado
-// Retorna > 0 si a > b, < 0 si a < b, 0 si son iguales
-int comparar_deportistas(Deportista a, Deportista b, int campo) {
-    switch(campo) {
-        case 1: return a.id - b.id;
-        case 2: return strcmp(a.nombre, b.nombre);
-        case 3: return strcmp(a.equipo, b.equipo);
-        case 4: return (a.puntaje > b.puntaje) - (a.puntaje < b.puntaje); // Evita problemas de truncamiento con floats
-        case 5: return a.competencias - b.competencias;
-        default: return 0;
-    }
-}
-
-// 1. Bubble Sort (Multicampo) con optimización
-void bubble_sort(Deportista *arreglo, int cantidad, int campo) {
-    for (int i = 0; i < cantidad - 1; i++) {
-        int intercambiado = 0;
-        for (int j = 0; j < cantidad - i - 1; j++) {
-            if (comparar_deportistas(arreglo[j], arreglo[j + 1], campo) > 0) {
-                Deportista temp = arreglo[j];
-                arreglo[j] = arreglo[j + 1];
-                arreglo[j + 1] = temp;
-                intercambiado = 1;
-            }
-        }
-        if (!intercambiado) break; // Optimización solicitada
-    }
-}
-
-// 2. Insertion Sort (Estándar)
-void insertion_sort(Deportista *arreglo, int cantidad, int campo) {
-    for (int i = 1; i < cantidad; i++) {
-        Deportista clave = arreglo[i];
-        int j = i - 1;
-        while (j >= 0 && comparar_deportistas(arreglo[j], clave, campo) > 0) {
-            arreglo[j + 1] = arreglo[j];
-            j = j - 1;
-        }
-        arreglo[j + 1] = clave;
-    }
-}
-
-// 3. Selection Sort (Optimizado para evitar intercambios innecesarios)
-void selection_sort(Deportista *arreglo, int cantidad, int campo) {
-    for (int i = 0; i < cantidad - 1; i++) {
-        int min_idx = i;
-        for (int j = i + 1; j < cantidad; j++) {
-            if (comparar_deportistas(arreglo[j], arreglo[min_idx], campo) < 0) {
-                min_idx = j;
-            }
-        }
-        if (min_idx != i) { // Optimización solicitada
-            Deportista temp = arreglo[i];
-            arreglo[i] = arreglo[min_idx];
-            arreglo[min_idx] = temp;
-        }
-    }
-}
-
-// 4. Cocktail Shaker Sort (Estándar)
-void cocktail_shaker_sort(Deportista *arreglo, int cantidad, int campo) {
-    int intercambiado = 1;
-    int inicio = 0;
-    int fin = cantidad - 1;
-    while (intercambiado) {
-        intercambiado = 0;
-        for (int i = inicio; i < fin; ++i) { // De izquierda a derecha
-            if (comparar_deportistas(arreglo[i], arreglo[i + 1], campo) > 0) {
-                Deportista temp = arreglo[i];
-                arreglo[i] = arreglo[i + 1];
-                arreglo[i + 1] = temp;
-                intercambiado = 1;
-            }
-        }
-        if (!intercambiado) break;
-        intercambiado = 0;
-        fin--;
-        for (int i = fin - 1; i >= inicio; --i) { // De derecha a izquierda
-            if (comparar_deportistas(arreglo[i], arreglo[i + 1], campo) > 0) {
-                Deportista temp = arreglo[i];
-                arreglo[i] = arreglo[i + 1];
-                arreglo[i + 1] = temp;
-                intercambiado = 1;
-            }
-        }
-        inicio++;
-    }
-}
-
-// Búsqueda Binaria Iterativa por ID
-int busqueda_binaria_iterativa(Deportista *arreglo, int cantidad, int id_buscar) {
-    int izquierda = 0;
-    int derecha = cantidad - 1;
-    while (izquierda <= derecha) {
-        int medio = izquierda + (derecha - izquierda) / 2;
-        if (arreglo[medio].id == id_buscar) {
-            return medio; // Encontrado
-        }
-        if (arreglo[medio].id < id_buscar) {
-            izquierda = medio + 1;
-        } else {
-            derecha = medio - 1;
-        }
-    }
-    return -1; // No encontrado
-}
 
 int main() {
     // Inicializar la semilla para los números aleatorios
@@ -177,15 +34,45 @@ int main() {
 
         switch(opcion) {
             case 1: {
-                printf("Generando %d deportistas...\n", CANTIDAD_GENERAR);
-                reiniciar_generador_id(); 
-                for (int i = 0; i < CANTIDAD_GENERAR; i++) {
-                    arreglo[i] = generar_deportista();
+                int tipo_generacion;
+                menu_generacion_datos(); // Mostrar el nuevo submenú
+                if (scanf("%d", &tipo_generacion) != 1) {
+                    while(getchar() != '\n');
+                    printf("Entrada invalida.\n");
+                    break;
                 }
-                cantidad_actual = CANTIDAD_GENERAR;
-                mezclar_deportistas(arreglo, cantidad_actual);
-                guardar_deportistas_csv(arreglo, cantidad_actual, ARCHIVO_DATOS);
-                printf("Datos generados y guardados en '%s'.\n", ARCHIVO_DATOS);
+
+                printf("Generando %d deportistas...\n", CANTIDAD_GENERAR);
+                
+                switch(tipo_generacion) {
+                    case 1: // Aleatorios (mezclados)
+                        reiniciar_generador_id();
+                        for (int i = 0; i < CANTIDAD_GENERAR; i++) {
+                            arreglo[i] = generar_deportista();
+                        }
+                        cantidad_actual = CANTIDAD_GENERAR;
+                        mezclar_deportistas(arreglo, cantidad_actual);
+                        printf("Datos aleatorios generados y mezclados.\n");
+                        break;
+                    case 2: // Ordenados por ID (Mejor Caso)
+                        generar_datos_ordenados(arreglo, CANTIDAD_GENERAR);
+                        cantidad_actual = CANTIDAD_GENERAR;
+                        printf("Datos ordenados por ID generados (Mejor Caso).\n");
+                        break;
+                    case 3: // Inversamente ordenados por ID (Peor Caso)
+                        generar_datos_inversos(arreglo, CANTIDAD_GENERAR);
+                        cantidad_actual = CANTIDAD_GENERAR;
+                        printf("Datos inversamente ordenados por ID generados (Peor Caso).\n");
+                        break;
+                    default:
+                        printf("Opcion de generacion invalida.\n");
+                        break;
+                }
+
+                if (cantidad_actual > 0) { // Solo guardar si se generaron datos
+                    guardar_deportistas_csv(arreglo, cantidad_actual, ARCHIVO_DATOS);
+                    printf("Datos guardados en '%s'.\n", ARCHIVO_DATOS);
+                }
                 break;
             }
             case 2: {
@@ -269,12 +156,7 @@ int main() {
 
                 if (metodo == 1) {
                     // Búsqueda Secuencial Estándar
-                    for (int i = 0; i < cantidad_actual; i++) {
-                        if (arreglo[i].id == id_buscar) {
-                            indice_encontrado = i;
-                            break;
-                        }
-                    }
+                    indice_encontrado = busqueda_secuencial(arreglo, cantidad_actual, id_buscar);
                 } else if (metodo == 2) {
                     // Búsqueda Binaria requiere arreglo ordenado
                     printf("[!] Ordenando arreglo por ID internamente para aplicar Busqueda Binaria...\n");
